@@ -1,0 +1,13 @@
+# единая версия того, что использую в коде, если у кого-то не скачано... не забыть версии прописать, ы
+fastapi
+uvicorn
+sqlalchemy
+asyncpg
+pydantic
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+pytest
+pytest-asyncio
+httpx
+aiosqlite
