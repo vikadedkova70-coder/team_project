@@ -90,7 +90,7 @@ async def test_create_post_without_images(client):
     }, headers={"Authorization": f"Bearer {token}"})
 
     if create.status_code != 200:
-        print(f"❌ Ошибка: {create.status_code} - {create.json()}")
+        print(f"Ошибка: {create.status_code} - {create.json()}")
 
     assert create.status_code == 200
     data = create.json()
