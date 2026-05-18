@@ -41,5 +41,8 @@ class User(Base):
     team_membership = relationship("TeamMember", back_populates="user", uselist=False)
     team_captain = relationship("Team", back_populates="captain", uselist=False)
     rating = relationship("UserRating", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    activities = relationship("Activity", back_populates="user", cascade="all, delete-orphan")
+    report_tasks = relationship("ReportTask", back_populates="user", cascade="all, delete-orphan")
+    checkin_tasks = relationship("CheckinTask", back_populates="user", cascade="all, delete-orphan")
 
     # author_posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")

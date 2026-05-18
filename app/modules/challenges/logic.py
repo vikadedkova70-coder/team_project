@@ -2,7 +2,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
-from app.models.activity import Challenge, TeamChallenge, Activity, TeamRatingLog
+from app.models.activity import Challenge, TeamChallenge, Activity
+from app.models.rating import TeamRatingLog
 from app.models.team import Team
 from app.models.user import User
 from app.modules.challenges.schemas import ChallengeResponse, TeamChallengeResponse

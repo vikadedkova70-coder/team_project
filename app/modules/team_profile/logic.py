@@ -3,7 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from app.models.team import Team, TeamMember
-from app.models.activity import Activity, TeamRatingLog
+from app.models.activity import Activity
+from app.models.rating import TeamRatingLog
 from app.models.user import User
 from app.modules.team_profile.schemas import (
     TeamProfileResponse,

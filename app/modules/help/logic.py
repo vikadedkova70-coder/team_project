@@ -4,7 +4,8 @@ from fastapi import HTTPException
 from datetime import datetime
 from app.models.reports import HelpRequest, HelpResponse
 from app.models.team import Team
-from app.models.activity import Activity, TeamRatingLog
+from app.models.activity import Activity
+from app.models.rating import TeamRatingLog
 
 
 HELP_BONUS = 0.5

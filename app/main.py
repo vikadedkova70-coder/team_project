@@ -7,7 +7,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.team.router import router as team_router
 from app.models.user import Student, User, UserRole
 from app.models.team import Team, TeamMember, TeamInviteLink, TeamJoinRequest
-from app.models.activity import Activity, TeamRatingLog, Challenge, TeamChallenge
+from app.models.activity import Activity, Challenge, TeamChallenge
 from sqlalchemy import select
 from app.modules.posts.router import router as posts_router
 from app.modules.team_profile.router import router as team_profile_router
