@@ -4,7 +4,6 @@ from datetime import datetime
 from app.core.database import Base
 
 
-# === REPORTS ===
 class TeamReport(Base):
     """Отчёт команды"""
     __tablename__ = "team_reports"
