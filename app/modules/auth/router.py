@@ -15,8 +15,8 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/verify", response_model=VerifyResponse)
 async def verify_endpoint(data: VerifyRequest, db: AsyncSession = Depends(get_db)):
-    token = await verify_student_logic(data, db)
-    return VerifyResponse(verification_token=token)
+    result = await verify_student_logic(data, db)
+    return VerifyResponse(**result)
 
 
 @router.post("/register")
@@ -25,6 +25,7 @@ async def register_endpoint(data: RegisterRequest, db: AsyncSession = Depends(ge
         data.verification_token,
         data.username,
         data.password,
+        data.confirm_password,
         db
     )
 

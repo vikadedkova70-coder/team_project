@@ -8,15 +8,9 @@ from app.core.config import settings
 from datetime import timedelta
 
 
-async def verify_student_logic(data: VerifyRequest, db: AsyncSession) -> str:
-    """Проверка студента по ID и ФИО, выдача токена верификации"""
-    query = select(Student).where(
-        Student.id == data.student_id,
-        Student.surname == data.surname,
-        Student.name == data.name,
-        Student.patronymic == data.patronymic
-    )
-
+async def verify_student_logic(data: VerifyRequest, db: AsyncSession) -> dict:
+    """Проверка студенческого билета: если аккаунт есть - предлагаем войти, если нет - выдаём токен регистрации"""
+    query = select(Student).where(Student.id == data.student_id)
     result = await db.execute(query)
     student = result.scalar_one_or_none()
 
@@ -24,17 +18,32 @@ async def verify_student_logic(data: VerifyRequest, db: AsyncSession) -> str:
         raise HTTPException(status_code=404, detail="Студент не найден")
 
     user_query = select(User).where(User.student_id == student.id)
-    if (await db.execute(user_query)).scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Аккаунт уже создан")
+    existing_user = (await db.execute(user_query)).scalar_one_or_none()
 
-    return create_access_token(
+    if existing_user:
+        return {
+            "exists": True,
+            "verification_token": None,
+            "message": "Аккаунт найден, выполните вход"
+        }
+
+    token = create_access_token(
         data={"sub": str(student.id), "scope": "verification"},
         expires_delta=timedelta(minutes=5)
     )
 
+    return {
+        "exists": False,
+        "verification_token": token,
+        "message": "Студент найден, зарегистрируйтесь"
+    }
 
-async def register_user_logic(token: str, username: str, password: str, db: AsyncSession) -> dict:
+
+async def register_user_logic(token: str, username: str, password: str, confirm_password: str, db: AsyncSession) -> dict:
     """Регистрация пользователя после верификации"""
+    if password != confirm_password:
+        raise HTTPException(status_code=400, detail="Пароли не совпадают")
+
     payload = decode_token(token)
     if not payload or payload.get("scope") != "verification":
         raise HTTPException(status_code=400, detail="Неверный токен")

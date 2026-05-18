@@ -7,8 +7,22 @@ from app.modules.auth.router import router as auth_router
 from app.modules.team.router import router as team_router
 from app.models.user import Student, User, UserRole
 from app.models.team import Team, TeamMember, TeamInviteLink, TeamJoinRequest
+from app.models.activity import Activity, TeamRatingLog, Challenge, TeamChallenge
 from sqlalchemy import select
 from app.modules.posts.router import router as posts_router
+from app.modules.team_profile.router import router as team_profile_router
+from app.modules.activity.router import router as activity_router
+from app.modules.challenges.router import router as challenges_router
+from app.modules.reports.router import router as reports_router
+from app.modules.events.router import router as events_router
+from app.modules.checkin.router import router as checkin_router
+from app.modules.help.router import router as help_router
+from app.models.reports import (
+    TeamReport, ReportFile, ReportTask,
+    TeamEvent, EventInvitation, EventParticipant,
+    WeeklyCheckin, CheckinTask,
+    HelpRequest, HelpResponse
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -59,6 +73,13 @@ app = FastAPI(title="University API", lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(team_router)
 app.include_router(posts_router)
+app.include_router(team_profile_router)
+app.include_router(activity_router)
+app.include_router(challenges_router)
+app.include_router(reports_router)
+app.include_router(events_router)
+app.include_router(checkin_router)
+app.include_router(help_router)
 
 
 @app.get("/")

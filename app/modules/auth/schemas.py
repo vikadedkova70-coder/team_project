@@ -2,25 +2,23 @@ from pydantic import BaseModel, Field
 
 
 class VerifyRequest(BaseModel):
-    """Данные для верификации студента"""
+    """Проверка студенческого билета"""
     student_id: int
-    surname: str
-    name: str
-    patronymic: str
 
 
 class VerifyResponse(BaseModel):
-    """Ответ после успешной верификации"""
-    verification_token: str
-    message: str = "Верификация успешна"
+    """Ответ после проверки студенческого билета"""
+    exists: bool  # True если аккаунт уже есть, False если нужно регистрироваться
+    verification_token: str | None = None  # Токен выдаётся только если аккаунта нет
+    message: str
 
 
 class RegisterRequest(BaseModel):
-    """Данные для регистрации (после верификации)"""
-    verification_token: str  # Токен, полученный на шаге верификации
-    # Никнейм: 3-50 символов, только латиница, цифры и подчёркивание
+    """Данные для регистрации (после проверки)"""
+    verification_token: str
     username: str = Field(..., min_length=3, max_length=50, pattern=r'^[a-zA-Z0-9_]+$')
     password: str = Field(..., min_length=6)
+    confirm_password: str
 
 
 class LoginRequest(BaseModel):

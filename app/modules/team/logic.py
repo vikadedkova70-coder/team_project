@@ -92,7 +92,6 @@ async def create_invite_link_logic(team: Team, expires_hours: int = 24,
 
     expires_at = None
     if expires_hours:
-        # 🔧 Используем naive datetime для совместимости с БД
         expires_at = datetime.utcnow() + timedelta(hours=expires_hours)
 
     link = TeamInviteLink(
@@ -219,3 +218,140 @@ async def process_join_request_logic(request_id: int, action: str, captain: User
     await db.refresh(request)
 
     return request
+
+
+async def get_team_detail_logic(team_id: int, db: AsyncSession) -> dict:
+    """Получение деталей команды"""
+    team = await db.get(Team, team_id)
+    if not team:
+        raise HTTPException(status_code=404, detail="Команда не найдена")
+
+    captain = await db.get(User, team.captain_id)
+    captain_name = None
+    if captain and captain.student:
+        captain_name = f"{captain.student.surname} {captain.student.name}"
+
+    members_result = await db.execute(
+        select(TeamMember)
+        .where(TeamMember.team_id == team_id)
+        .options(selectinload(TeamMember.user).selectinload(User.student))
+    )
+    members = members_result.scalars().all()
+
+    members_list = []
+    for m in members:
+        user = m.user
+        full_name = "Unknown"
+        if user.student:
+            full_name = f"{user.student.surname} {user.student.name} {user.student.patronymic}"
+        members_list.append({
+            "user_id": user.id,
+            "username": user.username,
+            "full_name": full_name,
+            "joined_at": m.joined_at
+        })
+
+    return {
+        "id": team.id,
+        "name": team.name,
+        "description": team.description,
+        "captain_id": team.captain_id,
+        "captain_name": captain_name,
+        "members": members_list,
+        "members_count": len(members_list),
+        "created_at": team.created_at
+    }
+
+
+async def update_team_logic(team_id: int, captain: User, data, db: AsyncSession) -> Team:
+    """Обновление команды"""
+    team = await db.get(Team, team_id)
+    if not team:
+        raise HTTPException(status_code=404, detail="Команда не найдена")
+    if team.captain_id != captain.id:
+        raise HTTPException(status_code=403, detail="Нет прав для этой команды")
+
+    if data.name is not None:
+        existing = await db.execute(select(Team).where(Team.name == data.name, Team.id != team_id))
+        if existing.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Команда с таким названием уже существует")
+        team.name = data.name
+
+    if data.description is not None:
+        team.description = data.description
+
+    await db.commit()
+    await db.refresh(team)
+    return team
+
+
+async def leave_team_logic(user: User, db: AsyncSession) -> None:
+    """Выход из команды"""
+    membership_result = await db.execute(
+        select(TeamMember).where(TeamMember.user_id == user.id)
+    )
+    membership = membership_result.scalar_one_or_none()
+    if not membership:
+        raise HTTPException(status_code=400, detail="Вы не состоите в команде")
+
+    team = await db.get(Team, membership.team_id)
+    if team and team.captain_id == user.id:
+        members_result = await db.execute(
+            select(TeamMember).where(TeamMember.team_id == team.id)
+        )
+        members = members_result.scalars().all()
+        if len(members) > 1:
+            raise HTTPException(status_code=400, detail="Капитан не может покинуть команду. Назначьте нового капитана или распустите команду.")
+
+    await db.delete(membership)
+    await db.commit()
+
+
+async def disband_team_logic(team_id: int, captain: User, db: AsyncSession) -> None:
+    """Роспуск команды"""
+    team = await db.get(Team, team_id)
+    if not team:
+        raise HTTPException(status_code=404, detail="Команда не найдена")
+    if team.captain_id != captain.id:
+        raise HTTPException(status_code=403, detail="Нет прав для этой команды")
+
+    await db.execute(
+        select(TeamMember).where(TeamMember.team_id == team_id)
+    )
+    from sqlalchemy import delete
+    await db.execute(delete(TeamMember).where(TeamMember.team_id == team_id))
+    await db.execute(delete(TeamInviteLink).where(TeamInviteLink.team_id == team_id))
+    await db.execute(delete(TeamJoinRequest).where(TeamJoinRequest.team_id == team_id))
+    await db.delete(team)
+    await db.commit()
+
+
+async def get_my_invite_links_logic(team_id: int, captain: User, db: AsyncSession) -> list:
+    """Получение ссылок капитана"""
+    team = await db.get(Team, team_id)
+    if not team or team.captain_id != captain.id:
+        raise HTTPException(status_code=403, detail="Нет прав для этой команды")
+
+    result = await db.execute(
+        select(TeamInviteLink)
+        .where(TeamInviteLink.team_id == team_id)
+        .where(TeamInviteLink.is_active == True)
+    )
+    return result.scalars().all()
+
+
+async def revoke_invite_link_logic(link_id: int, captain: User, db: AsyncSession) -> TeamInviteLink:
+    """Отзыв пригласительной ссылки"""
+    link_result = await db.execute(select(TeamInviteLink).where(TeamInviteLink.id == link_id))
+    link = link_result.scalar_one_or_none()
+    if not link:
+        raise HTTPException(status_code=404, detail="Ссылка не найдена")
+
+    team = await db.get(Team, link.team_id)
+    if not team or team.captain_id != captain.id:
+        raise HTTPException(status_code=403, detail="Нет прав для этой команды")
+
+    link.is_active = False
+    await db.commit()
+    await db.refresh(link)
+    return link

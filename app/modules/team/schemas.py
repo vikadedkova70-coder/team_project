@@ -64,3 +64,34 @@ class JoinRequestResponse(BaseModel):
 class JoinRequestAction(BaseModel):
     """Действие с заявкой"""
     action: str
+
+
+class TeamUpdateRequest(BaseModel):
+    """Обновление команды"""
+    name: Optional[str] = Field(None, min_length=3, max_length=50)
+    description: Optional[str] = Field(None, max_length=500)
+
+
+class TeamMemberResponse(BaseModel):
+    """Участник команды"""
+    user_id: int
+    username: str
+    full_name: str
+    joined_at: datetime
+
+
+class TeamDetailResponse(BaseModel):
+    """Детали команды"""
+    id: int
+    name: str
+    description: Optional[str] = None
+    captain_id: int
+    captain_name: Optional[str] = None
+    members: list[TeamMemberResponse]
+    members_count: int
+    created_at: datetime
+
+
+class InviteLinkListResponse(BaseModel):
+    """Список пригласительных ссылок"""
+    links: list[InviteLinkResponse]

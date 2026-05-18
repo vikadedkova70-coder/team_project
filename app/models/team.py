@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime, Text, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from app.core.database import Base
@@ -13,11 +13,15 @@ class Team(Base):
     description = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     captain_id = Column(Integer, ForeignKey("users.id"), unique=True, index=True)
+    rating = Column(Float, default=3.0, nullable=False)
 
     captain = relationship("User", back_populates="team_captain")
     members = relationship("TeamMember", back_populates="team", cascade="all, delete-orphan")
     invite_links = relationship("TeamInviteLink", back_populates="team", cascade="all, delete-orphan")
     join_requests = relationship("TeamJoinRequest", back_populates="team", cascade="all, delete-orphan")
+    rating_logs = relationship("TeamRatingLog", back_populates="team", cascade="all, delete-orphan")
+    activities = relationship("Activity", back_populates="team", cascade="all, delete-orphan")
+    challenge_enrollments = relationship("TeamChallenge", back_populates="team", cascade="all, delete-orphan")
 
 
 class TeamMember(Base):

@@ -203,3 +203,4 @@ async def test_cannot_update_others_post(client):
     }, headers={"Authorization": f"Bearer {petrov_token}"})
 
     assert update.status_code == 403
+

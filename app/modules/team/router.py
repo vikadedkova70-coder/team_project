@@ -12,7 +12,13 @@ from app.modules.team.logic import (
     join_by_link_logic,
     create_join_request_logic,
     get_team_requests_logic,
-    process_join_request_logic
+    process_join_request_logic,
+    get_team_detail_logic,
+    update_team_logic,
+    leave_team_logic,
+    disband_team_logic,
+    get_my_invite_links_logic,
+    revoke_invite_link_logic
 )
 from app.modules.team.schemas import (
     UserProfileResponse,
@@ -22,7 +28,11 @@ from app.modules.team.schemas import (
     InviteLinkResponse,
     JoinByLinkRequest,
     JoinRequestResponse,
-    JoinRequestAction
+    JoinRequestAction,
+    TeamUpdateRequest,
+    TeamDetailResponse,
+    TeamMemberResponse,
+    InviteLinkListResponse
 )
 from app.models.user import User, Student
 from app.models.team import Team
@@ -202,3 +212,88 @@ async def process_request(
     """Обработка заявки на вступление"""
     request = await process_join_request_logic(request_id, data.action, current_user, db)
     return {"message": f"Заявка {data.action}ена", "request_id": request.id}
+
+
+@router.get("/{team_id}", response_model=TeamDetailResponse)
+async def get_team_detail(
+    team_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Просмотр информации о команде"""
+    return await get_team_detail_logic(team_id, db)
+
+
+@router.put("/{team_id}", response_model=TeamResponse)
+async def update_team(
+    team_id: int,
+    data: TeamUpdateRequest,
+    current_user: User = Depends(get_current_captain),
+    db: AsyncSession = Depends(get_db)
+):
+    """Обновление команды (капитан)"""
+    team = await update_team_logic(team_id, current_user, data, db)
+    result = await get_team_detail_logic(team_id, db)
+    return TeamResponse(
+        id=result["id"],
+        name=result["name"],
+        description=result["description"],
+        captain_id=result["captain_id"],
+        captain_name=result["captain_name"],
+        members_count=result["members_count"],
+        created_at=result["created_at"]
+    )
+
+
+@router.delete("/leave")
+async def leave_team(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Выход из команды (студент)"""
+    await leave_team_logic(current_user, db)
+    return {"message": "Вы покинули команду"}
+
+
+@router.delete("/{team_id}")
+async def disband_team(
+    team_id: int,
+    current_user: User = Depends(get_current_captain),
+    db: AsyncSession = Depends(get_db)
+):
+    """Роспуск команды (капитан)"""
+    await disband_team_logic(team_id, current_user, db)
+    return {"message": "Команда распущена"}
+
+
+@router.get("/{team_id}/invites", response_model=InviteLinkListResponse)
+async def get_my_invite_links(
+    team_id: int,
+    current_user: User = Depends(get_current_captain),
+    db: AsyncSession = Depends(get_db)
+):
+    """Получение списка активных пригласительных ссылок"""
+    links = await get_my_invite_links_logic(team_id, current_user, db)
+    return InviteLinkListResponse(
+        links=[
+            InviteLinkResponse(
+                token=link.token,
+                team_name=(await db.get(Team, link.team_id)).name,
+                expires_at=link.expires_at,
+                max_uses=link.max_uses,
+                uses_count=link.uses_count,
+                is_active=link.is_active
+            )
+            for link in links
+        ]
+    )
+
+
+@router.delete("/invite/{link_id}")
+async def revoke_invite_link(
+    link_id: int,
+    current_user: User = Depends(get_current_captain),
+    db: AsyncSession = Depends(get_db)
+):
+    """Отзыв пригласительной ссылки"""
+    link = await revoke_invite_link_logic(link_id, current_user, db)
+    return {"message": "Ссылка отозвана", "link_id": link.id}
