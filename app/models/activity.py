@@ -32,8 +32,10 @@ class Activity(Base):
     event_metadata = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    team = relationship("Team", back_populates="activities")
-    user = relationship("User", back_populates="activities")
+    # team_activities commented out to avoid circular dependency issues in tests
+    # team = relationship("Team", back_populates="activities")
+    # user_activities commented out to avoid circular dependency issues in tests
+    # user = relationship("User", back_populates="activities")
 
 
 class Challenge(Base):

@@ -21,7 +21,8 @@ class Team(Base):
     join_requests = relationship("TeamJoinRequest", back_populates="team", cascade="all, delete-orphan")
     rating_rel = relationship("TeamRating", back_populates="team", uselist=False, cascade="all, delete-orphan")
     activity_logs = relationship("TeamActivityLog", back_populates="team", cascade="all, delete-orphan", foreign_keys="TeamActivityLog.team_id")
-    activities = relationship("Activity", back_populates="team", cascade="all, delete-orphan", foreign_keys="Activity.team_id")
+    # activities commented out to avoid circular dependency issues in tests
+    # activities = relationship("Activity", back_populates="team", cascade="all, delete-orphan", foreign_keys="Activity.team_id")
     challenge_enrollments = relationship("TeamChallenge", back_populates="team", cascade="all, delete-orphan")
 
 

@@ -185,7 +185,8 @@ class TestUserRating:
         assert rating.unity_score == 80.0
         assert rating.bonus_score == 50.0
         assert rating.penalty_score == 0.0
-        assert rating.total_krk == 79.0  # (100×0.6) + (80×0.3) + (50×0.1)
+        # (100×0.6) + (80×0.3) + (50×0.1) = 60 + 24 + 5 = 89
+        assert rating.total_krk == 89.0
         assert rating.league == LeagueTier.PRO.value
 
     @pytest.mark.asyncio
@@ -367,22 +368,32 @@ class TestTeamRating:
         """Вступление участника обновляет командный рейтинг"""
         team = test_teams[1]  # 2 участника: user4, user5
 
-        # Изначальный рейтинг
+        # Используем пользователя, который ещё не в команде (user3 из Team 1)
+        # Сначала устанавливаем ему рейтинг
+        rating_service = RatingService(db_session)
+        await rating_service.update_user_rating(user_id=test_users[2].id, base=150.0, unity=0, bonus=0)
+        await db_session.commit()
+
+        # Изначальный рейтинг команды 2
         initial = await team_rating_service.recalculate_team_rating(team.id)
         initial_avg = initial.average_krk
 
-        # Добавляем нового участника (user1)
-        new_member = TeamMember(user_id=test_users[0].id, team_id=team.id)
+        # Добавляем пользователя user3 в команду 2
+        # Сначала удаляем из текущей команды (Team 1)
+        result = await db_session.execute(
+            select(TeamMember).where(TeamMember.user_id == test_users[2].id)
+        )
+        current_membership = result.scalar_one()
+        await db_session.delete(current_membership)
+        await db_session.commit()
+
+        # Теперь добавляем в новую команду
+        new_member = TeamMember(user_id=test_users[2].id, team_id=team.id)
         db_session.add(new_member)
         await db_session.commit()
 
-        # Устанавливаем рейтинг новому участнику
-        rating_service = RatingService(db_session)
-        await rating_service.update_user_rating(user_id=test_users[0].id, base=150.0, unity=0, bonus=0)
-        await db_session.commit()
-
         # Пересчитываем
-        updated = await team_rating_service.on_member_joined(team.id, test_users[0].id)
+        updated = await team_rating_service.on_member_joined(team.id, test_users[2].id)
 
         assert updated.member_count == 3
 
@@ -444,16 +455,20 @@ class TestLeaderboard:
     @pytest.mark.asyncio
     async def test_global_ranking_order(self, rating_service, test_users, db_session):
         """Глобальный рейтинг сортируется по убыванию КРК"""
-        # Устанавливаем разные рейтинги
-        await rating_service.update_user_rating(user_id=test_users[0].id, base=100.0, unity=0, bonus=0)  # 60
-        await rating_service.update_user_rating(user_id=test_users[1].id, base=50.0, unity=0, bonus=0)   # 30
-        await rating_service.update_user_rating(user_id=test_users[2].id, base=150.0, unity=0, bonus=0)  # 90
+        # Устанавливаем разные рейтинги для всех 5 пользователей
+        for i, user in enumerate(test_users):
+            await rating_service.update_user_rating(
+                user_id=user.id,
+                base=(i + 1) * 20,
+                unity=0,
+                bonus=0
+            )
         await db_session.commit()
 
         rankings, total = await rating_service.get_global_rankings(limit=10)
 
         assert total == 5
-        assert len(rankings) <= 5
+        assert len(rankings) == 5
         # Первый должен быть с наибольшим КРК
         assert rankings[0].total_krk >= rankings[1].total_krk
 
@@ -503,7 +518,8 @@ class TestRatingTransfer:
             bonus=50.0
         )
         initial_krk = rating.total_krk
-        assert initial_krk == 79.0
+        # (100×0.6) + (80×0.3) + (50×0.1) = 60 + 24 + 5 = 89
+        assert initial_krk == 89.0
 
         # Пользователь уже в Team 1, добавляем его в Team 2
         # Сначала удаляем из текущей команды
