@@ -54,8 +54,6 @@ async def get_current_captain(
     return current_user
 
 #пока не знаю, что делают преподаватели и администраторы (и отдельно ли они?), поэтому на них еще нет запроса
-#потмо добавлю, как будет ясность, но так они в файлах встречаются
-
 
 async def get_current_admin_or_teacher(
         current_user: User = Depends(get_current_user)
