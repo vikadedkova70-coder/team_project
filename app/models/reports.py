@@ -51,7 +51,6 @@ class ReportTask(Base):
     user = relationship("User", back_populates="report_tasks")
 
 
-# === EVENTS ===
 class TeamEvent(Base):
     """Событие / воркшоп"""
     __tablename__ = "team_events"
@@ -100,7 +99,6 @@ class EventParticipant(Base):
     event = relationship("TeamEvent", back_populates="participants")
 
 
-# === CHECK-IN ===
 class WeeklyCheckin(Base):
     """Еженедельный check-in"""
     __tablename__ = "weekly_checkins"
@@ -133,7 +131,6 @@ class CheckinTask(Base):
     user = relationship("User", back_populates="checkin_tasks")
 
 
-# === HELP ===
 class HelpRequest(Base):
     """Заявка на помощь"""
     __tablename__ = "help_requests"
