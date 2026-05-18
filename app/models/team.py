@@ -19,9 +19,8 @@ class Team(Base):
     members = relationship("TeamMember", back_populates="team", cascade="all, delete-orphan")
     invite_links = relationship("TeamInviteLink", back_populates="team", cascade="all, delete-orphan")
     join_requests = relationship("TeamJoinRequest", back_populates="team", cascade="all, delete-orphan")
-    rating_logs = relationship("TeamRatingLog", back_populates="team", cascade="all, delete-orphan")
-    activities = relationship("Activity", back_populates="team", cascade="all, delete-orphan")
-    challenge_enrollments = relationship("TeamChallenge", back_populates="team", cascade="all, delete-orphan")
+    rating_rel = relationship("TeamRating", back_populates="team", uselist=False, cascade="all, delete-orphan")
+    # activity_logs и team_rating_logs определяются в соответствующих модулях после импорта
 
 
 class TeamMember(Base):

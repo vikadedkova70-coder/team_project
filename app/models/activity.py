@@ -5,9 +5,9 @@ from datetime import datetime
 Base = declarative_base()
 
 
-class TeamRatingLog(Base):
-    """История изменения рейтинга команды"""
-    __tablename__ = "team_rating_logs"
+class TeamActivityLog(Base):
+    """История изменения рейтинга команды (для активностей)"""
+    __tablename__ = "team_activity_logs"
 
     id = Column(Integer, primary_key=True)
     team_id = Column(Integer, ForeignKey("teams.id"), nullable=False, index=True)
@@ -17,7 +17,7 @@ class TeamRatingLog(Base):
     description = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    team = relationship("Team", back_populates="rating_logs")
+    team = relationship("Team", back_populates="activity_logs")
 
 
 class Activity(Base):
@@ -30,7 +30,7 @@ class Activity(Base):
     event_type = Column(String(50), nullable=False)
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
-    metadata = Column(JSON, nullable=True)
+    event_metadata = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     team = relationship("Team", back_populates="activities")

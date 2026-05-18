@@ -40,8 +40,6 @@ class User(Base):
     student = relationship("Student", back_populates="user")
     team_membership = relationship("TeamMember", back_populates="user", uselist=False)
     team_captain = relationship("Team", back_populates="captain", uselist=False)
-    activities = relationship("Activity", back_populates="user")
-    report_tasks = relationship("ReportTask", back_populates="user")
-    checkin_tasks = relationship("CheckinTask", back_populates="user")
+    rating = relationship("UserRating", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     # author_posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
