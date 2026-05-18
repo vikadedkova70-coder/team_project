@@ -217,5 +217,3 @@ async def test_join_request_flow(client):
     profile = await client.get("/team/profile", headers={"Authorization": f"Bearer {student_token}"})
     assert profile.json()["team_name"] == "Request Team"
 
-# именно в плане, что хотят от меня функции и что возвращать, пока не ясно...
-# но, просматривая код и конкретно тесты, +- идеи появляются, надо бы потом их обсудить и не забыть
